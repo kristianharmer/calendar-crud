@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use App\Actions\CreateEventAction;
+use App\Actions\EditEventAction;
+use App\Actions\DeleteEventAction;
 
 class EventsController extends Controller
 {
@@ -38,7 +41,7 @@ class EventsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, CreateEventAction $createEventAction)
     {
         $request->validate([
             'title' => 'required|max:255',
@@ -49,7 +52,7 @@ class EventsController extends Controller
         'due_at.date_format' => 'The date does not match the format dd/mm/yyyy',
         ]);
 
-        Event::create($request->all());
+        $createEventAction->execute($request);
 
         return redirect()->route('events.index')->with('success','Event created successfully.');
 
@@ -84,7 +87,7 @@ class EventsController extends Controller
      * @param  \App\Models\Event  $event
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Event $event)
+    public function update(Request $request, Event $event, EditEventAction $editEventAction)
     {
         $request->validate([
             'title' => 'required|max:255',
@@ -95,7 +98,7 @@ class EventsController extends Controller
         'due_at.date_format' => 'The date does not match the format dd/mm/yyyy',
         ]);
 
-        $event->update($request->all());
+        $editEventAction->execute($request, $event);
 
         return redirect()->route('events.index')->with('success','Event updated successfully.');
     }
@@ -106,13 +109,14 @@ class EventsController extends Controller
      * @param  \App\Models\Event  $event
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Event $event)
+    public function destroy(Event $event, DeleteEventAction $deleteEventAction)
     {
         if($event->user_id != auth()->user()->id) {
             return redirect()->route('events.index')->with('error','You are not allowed to delete another users event!');
         }
 
-        Event::destroy($event->id);
+        $deleteEventAction->execute($event);
+        
         return redirect()->route('events.index')->with('success','Event deleted successfully.');
 
     }
